@@ -3,33 +3,40 @@ import base64
 import binascii
 import uuid
 from djoser import serializers as djoser_serializers
-from rest_framework.serializers import SerializerMethodField
 from rest_framework import serializers
+from rest_framework.serializers import SerializerMethodField
 from django.core.files.base import ContentFile
+from recipes.serializers import ShortRecipeSerializer
 
 from .models import User
 
 
 class Base64ImageField(serializers.ImageField):
-    MAX_FILE_SIZE = 4 * 1024 * 1024
+    MAX_FILE_SIZE = 4 * 1024 * 1024  # 4 MB
 
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             try:
-                format, imgstr = data.split(';base64,')
-                ext = format.split('/')[-1].lower()
-                if ext not in ['jpg', 'jpeg', 'png', 'gif']:
+                header, imgstr = data.split(';base64,')
+                ext = header.split('/')[-1].lower()
+
+                if ext not in {'jpg', 'jpeg', 'png', 'gif'}:
                     raise serializers.ValidationError(
-                        "Некорректный формат изображения.")
+                        "Поддерживаются только изображения в форматах JPG, JPEG, PNG или GIF."
+                    )
+
                 decoded = base64.b64decode(imgstr)
             except (ValueError, TypeError, binascii.Error):
                 raise serializers.ValidationError(
-                    "Некорректные данные изображения.")
+                    "Неверный формат base64-изображения."
+                )
 
             if len(decoded) > self.MAX_FILE_SIZE:
+                max_mb = self.MAX_FILE_SIZE // (1024 * 1024)
                 raise serializers.ValidationError(
-                    f"Размер файла не должен превышать {self.MAX_FILE_SIZE // (1024 * 1024)} MB."
+                    f"Размер изображения не должен превышать {max_mb} МБ."
                 )
+
             filename = f"{uuid.uuid4().hex[:10]}.{ext}"
             data = ContentFile(decoded, name=filename)
 
@@ -52,13 +59,10 @@ class UserCreateSerializer(djoser_serializers.UserCreateSerializer):
 
 class UserSerializer(djoser_serializers.UserSerializer):
     is_subscribed = SerializerMethodField()
-    avatar = Base64ImageField(required=False, allow_null=True)
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        if not request or not request.user or not request.user.is_authenticated:
-            return False
-        if request.user == obj:
+        if not request or not request.user.is_authenticated or request.user == obj:
             return False
         return obj.subscribers.filter(subscriber=request.user).exists()
 
@@ -76,21 +80,20 @@ class UserSerializer(djoser_serializers.UserSerializer):
 
 
 class SubscriptionSerializer(UserSerializer):
-    # TODO: если у вас есть короткий сериализатор рецепта, раскомментируйте и используйте:
-    # from .recipes_serializers import ShortRecipeSerializer
-    # recipes = ShortRecipeSerializer(many=True, read_only=True)
+    recipes = ShortRecipeSerializer(many=True, read_only=True)
     recipes_count = SerializerMethodField()
+    avatar = Base64ImageField(required=False)
 
     class Meta(UserSerializer.Meta):
-        model = User
         fields = (
             "email",
             "id",
             "username",
             "first_name",
             "last_name",
+            "avatar",
             "is_subscribed",
-            # "recipes",
+            "recipes",
             "recipes_count",
         )
         read_only_fields = ("__all__",)
@@ -99,4 +102,4 @@ class SubscriptionSerializer(UserSerializer):
         return True
 
     def get_recipes_count(self, obj):
-        return 0
+        return obj.recipes.count()

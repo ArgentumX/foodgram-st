@@ -40,8 +40,8 @@ class CustomUserViewSet(UserViewSet):
         detail=True,
         methods=['post', 'delete']
     )
-    def subscribe(self, request, pk=None):
-        author = get_object_or_404(User, id=pk)
+    def subscribe(self, request, id):
+        author = get_object_or_404(User, pk=id)
         if request.user == author:
             return Response({'error': 'Self-subscription is not allowed.'},
                             status=status.HTTP_400_BAD_REQUEST)
