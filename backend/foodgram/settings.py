@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+from yaml import serialize
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,7 +27,7 @@ SECRET_KEY = 'django-insecure-yi+=e!fv7c&z)brhe4_wpl3^*cq1!8qi&xpbh!zxhew710o#y@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-AUTH_USER_MODEL = 'users.CustomUser'
+AUTH_USER_MODEL = 'users.User'
 
 ALLOWED_HOSTS = []
 
@@ -139,14 +141,16 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
+    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    ],
+    ),
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 20,
 }
 
 SPECTACULAR_SETTINGS = {
@@ -157,6 +161,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 DJOSER = {
-    'SEND_ACTIVATION_EMAIL': False,
-    'SEND_CONFIRMATION_EMAIL': False,
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.UserCreateSerializer',
+        'current_user': 'users.serializers.UserSerializer',
+        'user': 'users.serializers.UserSerializer',
+    },
+    'PERMISSIONS': {
+        'user': ('rest_framework.permissions.IsAuthenticatedOrReadOnly',),
+        'user_list': ('rest_framework.permissions.IsAuthenticatedOrReadOnly',)
+    }
 }
