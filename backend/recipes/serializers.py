@@ -1,10 +1,11 @@
 # recipes/serializers.py
-
+from django.core.exceptions import ValidationError
 from django.db.transaction import atomic
-from drf_extra_fields.fields import Base64ImageField
+from foodgram.serializers import Base64ImageField
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from recipes.models import Ingredient, Recipe, Tag, AmountIngredient
 from .validators import validate_tags, validate_ingredients
+from django.db.models import F
 
 
 class ShortRecipeSerializer(ModelSerializer):
@@ -32,6 +33,24 @@ class IngredientSerializer(ModelSerializer):
         model = Ingredient
         fields = ("id", "name", "measurement_unit")
         read_only_fields = fields
+
+
+class AmountIngredientSerializer(ModelSerializer):
+    id = ReadOnlyField(source='ingredient.id')
+    name = ReadOnlyField(source='ingredient.name')
+    measurement_unit = ReadOnlyField(
+        source='ingredient.measurement_unit'
+    )
+
+    class Meta:
+        model = AmountIngredient
+        fields = ('id', 'name', 'measurement_unit', 'amount')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=AmountIngredient.objects.all(),
+                fields=['ingredient', 'recipe']
+            )
+        ]
 
 
 class RecipeSerializer(ModelSerializer):
@@ -69,14 +88,6 @@ class RecipeSerializer(ModelSerializer):
         from users.serializers import UserSerializer
         return UserSerializer(obj.author, context=self.context).data
 
-    def get_ingredients(self, recipe):
-        return recipe.ingredients.values(
-            "id",
-            "name",
-            "measurement_unit",
-            amount=F("recipeingredient__amount")
-        )
-
     def get_is_favorited(self, recipe):
         user = self.context["request"].user
         return (
@@ -96,7 +107,14 @@ class RecipeSerializer(ModelSerializer):
         ingredients_data = self.initial_data.get("ingredients")
 
         attrs["tags"] = validate_tags(tags_data, Tag)
-        attrs["ingredients"] = validate_ingredients(ingredients_data, Ingredient)
+        attrs["ingredients"] = validate_ingredients(
+            ingredients_data, Ingredient)
+
+        name = attrs.get('name')
+        author = self.context['request'].user
+        if name and Recipe.objects.filter(name=name, author=author).exists():
+            raise ValidationError("У вас уже есть рецепт с таким названием.")
+
         return attrs
 
     @atomic
@@ -126,7 +144,6 @@ class RecipeSerializer(ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
-            
         if tags is not None:
             instance.tags.set(tags)
         if ingredients is not None:

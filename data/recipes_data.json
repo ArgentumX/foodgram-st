@@ -1,0 +1,172 @@
+[
+  {
+    "model": "recipes.ingredient",
+    "pk": 1,
+    "fields": {
+      "name": "Картофель",
+      "measurement_unit": "г",
+      "created_at": "2024-05-01T00:00:00Z",
+      "updated_at": "2024-05-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.ingredient",
+    "pk": 2,
+    "fields": {
+      "name": "Молоко",
+      "measurement_unit": "мл",
+      "created_at": "2024-05-01T00:00:00Z",
+      "updated_at": "2024-05-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.ingredient",
+    "pk": 3,
+    "fields": {
+      "name": "Соль",
+      "measurement_unit": "г",
+      "created_at": "2024-05-01T00:00:00Z",
+      "updated_at": "2024-05-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.ingredient",
+    "pk": 4,
+    "fields": {
+      "name": "Яйцо",
+      "measurement_unit": "шт",
+      "created_at": "2024-05-01T00:00:00Z",
+      "updated_at": "2024-05-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 1,
+    "fields": {
+      "name": "Завтрак",
+      "color": "#FF5733",
+      "slug": "breakfast",
+      "created_at": "2024-05-01T00:00:00Z",
+      "updated_at": "2024-05-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 2,
+    "fields": {
+      "name": "Обед",
+      "color": "#33FF57",
+      "slug": "lunch",
+      "created_at": "2024-05-01T00:00:00Z",
+      "updated_at": "2024-05-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 3,
+    "fields": {
+      "name": "Ужин",
+      "color": "#3357FF",
+      "slug": "dinner",
+      "created_at": "2024-05-01T00:00:00Z",
+      "updated_at": "2024-05-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.recipe",
+    "pk": 1,
+    "fields": {
+      "name": "Картофельное пюре",
+      "author": 1,
+      "pub_date": "2024-05-01T12:00:00Z",
+      "image": "",
+      "text": "Простое и вкусное картофельное пюре с молоком и сливочным маслом.",
+      "cooking_time": 30,
+      "created_at": "2024-05-01T12:00:00Z",
+      "updated_at": "2024-05-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.recipe",
+    "pk": 2,
+    "fields": {
+      "name": "Яичница",
+      "author": 1,
+      "pub_date": "2024-05-02T08:00:00Z",
+      "image": "",
+      "text": "Классическая яичница на завтрак.",
+      "cooking_time": 10,
+      "created_at": "2024-05-02T08:00:00Z",
+      "updated_at": "2024-05-02T08:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 1,
+    "fields": {
+      "recipe": 1,
+      "ingredient": 1,
+      "amount": 500,
+      "created_at": "2024-05-01T12:00:00Z",
+      "updated_at": "2024-05-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 2,
+    "fields": {
+      "recipe": 1,
+      "ingredient": 2,
+      "amount": 100,
+      "created_at": "2024-05-01T12:00:00Z",
+      "updated_at": "2024-05-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 3,
+    "fields": {
+      "recipe": 1,
+      "ingredient": 3,
+      "amount": 5,
+      "created_at": "2024-05-01T12:00:00Z",
+      "updated_at": "2024-05-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 4,
+    "fields": {
+      "recipe": 2,
+      "ingredient": 4,
+      "amount": 2,
+      "created_at": "2024-05-02T08:00:00Z",
+      "updated_at": "2024-05-02T08:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 5,
+    "fields": {
+      "recipe": 2,
+      "ingredient": 3,
+      "amount": 2,
+      "created_at": "2024-05-02T08:00:00Z",
+      "updated_at": "2024-05-02T08:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.recipe_tags",
+    "fields": {
+      "recipe_id": 1,
+      "tag_id": 2
+    }
+  },
+  {
+    "model": "recipes.recipe_tags",
+    "fields": {
+      "recipe_id": 2,
+      "tag_id": 1
+    }
+  }
+]
