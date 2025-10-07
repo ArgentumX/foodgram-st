@@ -3,36 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 
-def validate_tags(tag_ids, tag_model) -> list:
-    if tag_ids is None:
-        return []
-
-    if len(tag_ids) != len(set(tag_ids)):
-        raise ValidationError("Теги не должны дублироваться.")
-
-    tags = tag_model.objects.filter(id__in=tag_ids)
-    if len(tags) != len(tag_ids):
-        raise ValidationError("Указан несуществующий тег.")
-
-    return list(tags)
-
-
-# core/validators.py (продолжение)
-
 def validate_ingredients(ingredients_data, ingredient_model) -> dict:
-    """
-    Валидация списка ингредиентов.
-
-    Args:
-        ingredients_data: list[dict] — [{'id': 1, 'amount': 100}, ...]
-        ingredient_model: модель Ingredient.
-
-    Returns:
-        dict[int, int]: {ingredient_id: amount}
-
-    Raises:
-        ValidationError: если данные некорректны.
-    """
     if not isinstance(ingredients_data, list):
         raise ValidationError(
             "Ингредиенты должны быть переданы в виде списка.")

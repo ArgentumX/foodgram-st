@@ -164,9 +164,9 @@ SPECTACULAR_SETTINGS = {
 
 DJOSER = {
     'SERIALIZERS': {
-        'user_create': 'users.serializers.UserCreateSerializer',
-        'current_user': 'users.serializers.UserSerializer',
-        'user': 'users.serializers.UserSerializer',
+        'user_create': 'api.serializers.UserCreateSerializer',
+        'current_user': 'api.serializers.UserSerializer',
+        'user': 'api.serializers.UserSerializer',
     },
     'PERMISSIONS': {
         'user': ('rest_framework.permissions.IsAuthenticatedOrReadOnly',),

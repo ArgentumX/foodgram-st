@@ -33,55 +33,6 @@ HEX_COLOR_VALIDATOR = RegexValidator(
 )
 
 
-class Tag(TimeBasedModel):
-    name = CharField(
-        verbose_name="Тег",
-        max_length=settings.MAX_LEN_RECIPES_CHARFIELD,
-        unique=True,
-    )
-    color = CharField(
-        verbose_name="Цвет (HEX)",
-        max_length=7,
-        unique=True,
-        validators=[HEX_COLOR_VALIDATOR],
-    )
-    slug = CharField(
-        verbose_name="Slug",
-        max_length=settings.MAX_LEN_RECIPES_CHARFIELD,
-        unique=True,
-    )
-
-    class Meta:
-        verbose_name = "Тег"
-        verbose_name_plural = "Теги"
-        ordering = ("name",)
-        constraints = (
-            CheckConstraint(check=Q(name__length__gt=0),
-                            name="tag_name_not_empty"),
-            CheckConstraint(check=Q(slug__length__gt=0),
-                            name="tag_slug_not_empty"),
-        )
-
-    def __str__(self) -> str:
-        return f"{self.name} (цвет: {self.color})"
-
-    def clean(self) -> None:
-        if self.name:
-            self.name = self.name.strip().lower()
-        if self.slug:
-            self.slug = self.slug.strip().lower()
-        if self.color:
-            color = self.color.strip()
-            if not color.startswith("#"):
-                color = f"#{color}"
-            try:
-                HEX_COLOR_VALIDATOR(color)
-            except ValidationError:
-                raise ValidationError({"color": "Некорректный HEX-код цвета."})
-            self.color = color
-        super().clean()
-
-
 class Ingredient(TimeBasedModel):
     name = CharField(
         verbose_name="Ингредиент",
@@ -127,12 +78,6 @@ class Recipe(TimeBasedModel):
         to=User,
         on_delete=SET_NULL,
         null=True,
-        blank=True,
-    )
-    tags = ManyToManyField(
-        verbose_name="Теги",
-        related_name="recipes",
-        to="Tag",
         blank=True,
     )
     ingredients = ManyToManyField(
@@ -237,7 +182,6 @@ class AmountIngredient(TimeBasedModel):
         constraints = (
             UniqueConstraint(fields=("recipe", "ingredient"),
                              name="unique_ingredient_in_recipe"),
-            # CheckConstraint для amount__gte=0 удалён — избыточен для PositiveSmallIntegerField
         )
 
     def __str__(self) -> str:
