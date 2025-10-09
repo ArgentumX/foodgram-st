@@ -1,4 +1,4 @@
-По адресу http://localhost изучите фронтенд веб-приложения, а по адресу http://localhost/api/docs/ — спецификацию API.
+По адресу http://localhost:8000 изучите фронтенд веб-приложения, а по адресу http://localhost:8000/api/docs/ — спецификацию API.
 
 ## Docker setup
 
@@ -27,11 +27,11 @@ docker compose exec backend python manage.py createsuperuser
 ```
 
 ```bash
-docker compose exec backend python manage.py loaddata ./data/ingredients_data.json
+docker compose exec backend python manage.py loaddata ./fixtures/ingredients_data.json
 ```
 
 ```bash
-docker compose exec backend python manage.py loaddata ./data/test_data.json
+docker compose exec backend python manage.py loaddata ./fixtures/test_data.json
 ```
 
 ```bash

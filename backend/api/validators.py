@@ -18,13 +18,11 @@ def validate_ingredients(ingredients_data, ingredient_model) -> dict:
             raise ValidationError("Каждый ингредиент должен быть объектом.")
 
         try:
-            ing_id = item["id"]
-            amount = item["amount"]
+            ing_id = int(item["id"])
+            amount = int(item["amount"])
         except KeyError as e:
-            raise ValidationError(f"В ингредиенте отсутствует поле: {e}")
-
-        if not isinstance(ing_id, int) or not isinstance(amount, (int, float)):
-            raise ValidationError("ID и количество должны быть числами.")
+            raise ValidationError(f"В ингредиенте отсутствует или"
+                                  f"неверно представлено поле: {e}")
 
         if amount <= 0:
             raise ValidationError(
