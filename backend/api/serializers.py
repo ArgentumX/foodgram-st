@@ -54,8 +54,8 @@ class UserSerializer(djoser_serializers.UserSerializer):
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         if (
-            not request 
-            or not request.user.is_authenticated 
+            not request
+            or not request.user.is_authenticated
             or request.user == obj
         ):
             return False
