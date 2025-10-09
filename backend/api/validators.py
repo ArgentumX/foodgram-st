@@ -43,4 +43,4 @@ def validate_ingredients(ingredients_data, ingredient_model) -> dict:
     if len(db_ingredients) != len(ingredient_ids):
         raise ValidationError("Указан несуществующий ингредиент.")
 
-    return amounts  # {id: amount}
+    return amounts

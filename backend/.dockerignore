@@ -1,1 +1,32 @@
-.env*
+# Python bytecode
+*.pyc
+__pycache__/
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Git-related files
+.git/
+.gitignore
+
+# Database files (if using SQLite locally)
+*.sqlite3
+db.sqlite3
+
+# Env files
+.env
+.env.*
+
+# Media files (if not needed in the image or handled by cloud storage)
+media/
+
+# Logs
+logs/
+*.log
+
+# Docker-related files (not needed inside the image)
+Dockerfile
+docker-compose.yml
+.dockerignore

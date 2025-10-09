@@ -1,16 +1,12 @@
-from typing import Optional
-
 from PIL import Image
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db.models import (
     CASCADE,
     SET_NULL,
     CharField,
     CheckConstraint,
-    DateTimeField,
     ForeignKey,
     ImageField,
     ManyToManyField,
@@ -56,15 +52,15 @@ class Ingredient(TimeBasedModel):
                             name="ingredient_unit_not_empty"),
         )
 
-    def __str__(self) -> str:
-        return f"{self.name} ({self.measurement_unit})"
-
-    def clean(self) -> None:
+    def save(self, *args, **kwargs):
         if self.name:
             self.name = self.name.strip().lower()
         if self.measurement_unit:
             self.measurement_unit = self.measurement_unit.strip().lower()
-        super().clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.measurement_unit})"
 
 
 class Recipe(TimeBasedModel):
@@ -87,12 +83,9 @@ class Recipe(TimeBasedModel):
         through="AmountIngredient",
         blank=True,
     )
-    pub_date = DateTimeField(
-        verbose_name="Дата публикации", auto_now_add=True, editable=False
-    )
     image = ImageField(
         verbose_name="Изображение блюда",
-        upload_to="recipe_images/",
+        upload_to=settings.RECIPE_IMAGES_MEDIA_PATH,
         blank=True,
     )
     text = TextField(
@@ -117,7 +110,7 @@ class Recipe(TimeBasedModel):
     class Meta:
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
-        ordering = ("-pub_date",)
+        ordering = ("-created_at",)
         constraints = (
             UniqueConstraint(fields=("name", "author"),
                              name="unique_recipe_per_author"),
@@ -125,27 +118,25 @@ class Recipe(TimeBasedModel):
                             name="recipe_name_not_empty"),
         )
 
-    def __str__(self) -> str:
-        return self.name
+    def save(self, *args, **kwargs):
 
-    def clean(self) -> None:
         if self.name:
             self.name = self.name.strip().capitalize()
-        super().clean()
 
-    def save(self, *args, **kwargs) -> None:
         super().save(*args, **kwargs)
 
         if not self.image:
             return
 
-        image_path = getattr(self.image, "path", None)
-        if not image_path:
+        if not self.image.path:
             return
 
-        with Image.open(image_path) as img:
+        with Image.open(self.image.path) as img:
             img.thumbnail(settings.RECIPE_IMAGE_SIZE)
-            img.save(image_path)
+            img.save(self.image.path)
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class AmountIngredient(TimeBasedModel):
@@ -185,7 +176,7 @@ class AmountIngredient(TimeBasedModel):
         )
 
     def __str__(self) -> str:
-        return f"{self.amount} {self.ingredient.measurement_unit} {self.ingredient.name}"
+        return f"{self.ingredient.name} — {self.amount} {self.ingredient.measurement_unit}"
 
 
 class Favorite(TimeBasedModel):
@@ -200,9 +191,6 @@ class Favorite(TimeBasedModel):
         related_name="favorites",
         to=User,
         on_delete=CASCADE,
-    )
-    date_added = DateTimeField(
-        verbose_name="Дата добавления", auto_now_add=True, editable=False
     )
 
     class Meta:
@@ -229,9 +217,6 @@ class Cart(TimeBasedModel):
         related_name="carts",
         to=User,
         on_delete=CASCADE,
-    )
-    date_added = DateTimeField(
-        verbose_name="Дата добавления", auto_now_add=True, editable=False
     )
 
     class Meta:

@@ -1,0 +1,149 @@
+[
+  {
+    "model": "users.user",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$600000$examplehash1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "user1",
+      "first_name": "Иван",
+      "last_name": "Петров",
+      "email": "user1@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-04-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.ingredient",
+    "pk": 1,
+    "fields": {
+      "name": "[test] помидор",
+      "measurement_unit": "шт",
+      "created_at": "2025-04-01T10:00:00Z",
+      "updated_at": "2025-04-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.ingredient",
+    "pk": 2,
+    "fields": {
+      "name": "[test] огурец",
+      "measurement_unit": "шт",
+      "created_at": "2025-04-01T10:00:00Z",
+      "updated_at": "2025-04-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.ingredient",
+    "pk": 3,
+    "fields": {
+      "name": "[test] оливковое масло",
+      "measurement_unit": "ст. л.",
+      "created_at": "2025-04-01T10:00:00Z",
+      "updated_at": "2025-04-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.ingredient",
+    "pk": 4,
+    "fields": {
+      "name": "[test] куриная грудка",
+      "measurement_unit": "г",
+      "created_at": "2025-04-01T10:00:00Z",
+      "updated_at": "2025-04-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.ingredient",
+    "pk": 5,
+    "fields": {
+      "name": "[test] рис",
+      "measurement_unit": "г",
+      "created_at": "2025-04-01T10:00:00Z",
+      "updated_at": "2025-04-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.recipe",
+    "pk": 1,
+    "fields": {
+      "name": "Овощной салат",
+      "author": 1,
+      "text": "Свежий летний салат из помидоров и огурцов.",
+      "cooking_time": 10,
+      "image": "some image",
+      "created_at": "2025-04-01T11:00:00Z",
+      "updated_at": "2025-04-01T11:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.recipe",
+    "pk": 2,
+    "fields": {
+      "name": "Курица с рисом",
+      "author": 1,
+      "text": "Простое и сытное блюдо на каждый день.",
+      "cooking_time": 40,
+      "image": "some image",
+      "created_at": "2025-04-01T12:00:00Z",
+      "updated_at": "2025-04-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 1,
+    "fields": {
+      "recipe": 1,
+      "ingredient": 1,
+      "amount": 2,
+      "created_at": "2025-04-01T11:00:00Z",
+      "updated_at": "2025-04-01T11:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 2,
+    "fields": {
+      "recipe": 1,
+      "ingredient": 2,
+      "amount": 1,
+      "created_at": "2025-04-01T11:00:00Z",
+      "updated_at": "2025-04-01T11:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 3,
+    "fields": {
+      "recipe": 1,
+      "ingredient": 3,
+      "amount": 1,
+      "created_at": "2025-04-01T11:00:00Z",
+      "updated_at": "2025-04-01T11:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 4,
+    "fields": {
+      "recipe": 2,
+      "ingredient": 4,
+      "amount": 300,
+      "created_at": "2025-04-01T12:00:00Z",
+      "updated_at": "2025-04-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "recipes.amountingredient",
+    "pk": 5,
+    "fields": {
+      "recipe": 2,
+      "ingredient": 5,
+      "amount": 200,
+      "created_at": "2025-04-01T12:00:00Z",
+      "updated_at": "2025-04-01T12:00:00Z"
+    }
+  }
+]

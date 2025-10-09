@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
-from yaml import serialize
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,6 +25,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+
+load_dotenv()
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
@@ -188,3 +190,9 @@ MIN_AMOUNT_INGREDIENTS = 1
 MAX_AMOUNT_INGREDIENTS = 10000
 
 RECIPE_IMAGE_SIZE = (800, 800)
+
+RECIPE_IMAGES_MEDIA_PATH = "recipes/images"
+USER_AVATARS_MEDIA_PATH = "users/avatars"
+
+# 4 mb
+DEFAULT_CLIENT_MAX_FILESIZE = 4 * 1024 * 1024

@@ -152,6 +152,7 @@ class RecipeSerializer(ModelSerializer):
             "cooking_time",
         )
         read_only_fields = (
+            "id",
             "author",
             "is_favorited",
             "is_in_shopping_cart",

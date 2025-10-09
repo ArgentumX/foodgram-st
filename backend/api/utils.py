@@ -1,5 +1,4 @@
-def generate_shopping_cart_txt(ingredients):
-    """Генерирует TXT-содержимое списка покупок."""
+def generate_shopping_cart(ingredients) -> str:
     lines = ['Список покупок:\n']
     for ing in ingredients:
         lines.append(

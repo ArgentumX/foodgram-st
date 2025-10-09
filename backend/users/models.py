@@ -1,10 +1,11 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 from foodgram.models import TimeBasedModel
 
 
-class User(AbstractUser, TimeBasedModel):
+class User(AbstractUser):
     email = models.EmailField(
         verbose_name='Email',
         unique=True,
@@ -14,7 +15,7 @@ class User(AbstractUser, TimeBasedModel):
     last_name = models.CharField(max_length=48, blank=False)
     avatar = models.ImageField(
         verbose_name='Avatar',
-        upload_to='users/media/',
+        upload_to=settings.USER_AVATARS_MEDIA_PATH,
         null=True,
         blank=True
     )
@@ -28,6 +29,7 @@ class User(AbstractUser, TimeBasedModel):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ("username",)
 
     def __str__(self):
         return self.username
@@ -53,6 +55,7 @@ class Subscription(TimeBasedModel):
     class Meta:
         verbose_name = "Подписка"
         verbose_name_plural = "Подписки"
+        ordering = ("author__username",)
         constraints = [
             models.UniqueConstraint(
                 fields=['subscriber', 'author'],

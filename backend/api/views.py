@@ -1,4 +1,4 @@
-from django.db.models import F
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -7,7 +7,6 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.permissions import SAFE_METHODS
 
 from .permissions import IsOwnerOrReadOnly
 from recipes.models import Recipe, Ingredient, Favorite, Cart, AmountIngredient
@@ -16,18 +15,9 @@ from .serializers import (
     ShortRecipeSerializer,
     IngredientSerializer,
 )
-from .filters import RecipeFilter
-from .utils import generate_shopping_cart_txt
-
-# users/views.py
-from django.shortcuts import get_object_or_404
+from .filters import IngredientFilter, RecipeFilter
+from .utils import generate_shopping_cart
 from djoser.views import UserViewSet
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.files.storage import default_storage
-
 from .serializers import SubscriptionSerializer, UserSerializer
 from users.models import Subscription, User
 
@@ -35,13 +25,9 @@ from users.models import Subscription, User
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
-
-    def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
-            return [IsOwnerOrReadOnly()]
-        return [IsAuthenticatedOrReadOnly()]
 
     def get_queryset(self):
         return super().get_queryset().select_related('author').prefetch_related(
@@ -112,11 +98,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 'ingredient__name',
                 'ingredient__measurement_unit'
             )
-            .annotate(total_amount=F('amount'))
+            .annotate(total_amount=Sum('amount'))
             .order_by('ingredient__name')
         )
 
-        content = generate_shopping_cart_txt(ingredients)
+        content = generate_shopping_cart(ingredients)
         response = HttpResponse(
             content, content_type='text/plain; charset=utf-8')
         response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
@@ -141,14 +127,9 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    filterset_class = IngredientFilter
     pagination_class = None
-
-    def get_queryset(self):
-        queryset = Ingredient.objects.all()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__istartswith=name.lower().strip())
-        return queryset
+    search_fields = ("^name",)
 
 
 class CustomUserViewSet(UserViewSet):
