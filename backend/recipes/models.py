@@ -1,7 +1,5 @@
-from PIL import Image
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from foodgram.models import TimeBasedModel
+from django.db.models.functions import Length
 from django.db.models import (
     CASCADE,
     SET_NULL,
@@ -15,9 +13,15 @@ from django.db.models import (
     TextField,
     UniqueConstraint,
 )
-from django.db.models.functions import Length
+from PIL import Image
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.validators import (
+    MaxValueValidator, 
+    MinValueValidator,
+    RegexValidator
+)
 
-from foodgram.models import TimeBasedModel
 
 CharField.register_lookup(Length)
 
@@ -25,7 +29,7 @@ User = get_user_model()
 
 HEX_COLOR_VALIDATOR = RegexValidator(
     regex=r"^#[0-9A-Fa-f]{6}$",
-    message="Цвет должен быть указан в формате HEX: #RRGGBB (например, #FF5733)."
+    message="Цвет должен быть указан в формате HEX: #RRGGBB"
 )
 
 
@@ -98,11 +102,17 @@ class Recipe(TimeBasedModel):
         validators=[
             MinValueValidator(
                 settings.MIN_COOKING_TIME,
-                message=f"Время приготовления не может быть меньше {settings.MIN_COOKING_TIME} минуты."
+                message=(
+                    f"Время приготовления не может быть меньше "
+                    f"{settings.MIN_COOKING_TIME} минуты."
+                )
             ),
             MaxValueValidator(
                 settings.MAX_COOKING_TIME,
-                message=f"Время приготовления не может превышать {settings.MAX_COOKING_TIME} минут."
+                message=(
+                    f"Время приготовления не может превышать "
+                    f"{settings.MAX_COOKING_TIME} минут."
+                )
             ),
         ],
     )
@@ -157,11 +167,17 @@ class AmountIngredient(TimeBasedModel):
         validators=[
             MinValueValidator(
                 settings.MIN_AMOUNT_INGREDIENTS,
-                message=f"Количество ингредиента должно быть не менее {settings.MIN_AMOUNT_INGREDIENTS}."
+                message=(
+                    f"Количество ингредиента должно быть не менее "
+                    f"{settings.MIN_AMOUNT_INGREDIENTS}."
+                )
             ),
             MaxValueValidator(
                 settings.MAX_AMOUNT_INGREDIENTS,
-                message=f"Количество ингредиента не может превышать {settings.MAX_AMOUNT_INGREDIENTS}."
+                message=(
+                    f"Количество ингредиента не может превышать "
+                    f"{settings.MAX_AMOUNT_INGREDIENTS}."
+                )
             ),
         ],
     )
@@ -171,12 +187,17 @@ class AmountIngredient(TimeBasedModel):
         verbose_name_plural = "Количество ингредиентов"
         ordering = ("recipe",)
         constraints = (
-            UniqueConstraint(fields=("recipe", "ingredient"),
-                             name="unique_ingredient_in_recipe"),
+            UniqueConstraint(
+                fields=("recipe", "ingredient"),
+                name="unique_ingredient_in_recipe"
+            ),
         )
 
     def __str__(self) -> str:
-        return f"{self.ingredient.name} — {self.amount} {self.ingredient.measurement_unit}"
+        return (
+            f"{self.ingredient.name} — {self.amount} "
+            f"{self.ingredient.measurement_unit}"
+        )
 
 
 class Favorite(TimeBasedModel):

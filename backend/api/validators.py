@@ -1,6 +1,5 @@
 # core/validators.py
 from django.core.exceptions import ValidationError
-from django.db import models
 
 
 def validate_ingredients(ingredients_data, ingredient_model) -> dict:

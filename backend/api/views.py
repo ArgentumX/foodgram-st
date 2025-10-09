@@ -5,7 +5,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly, 
+    IsAuthenticated
+)
 from rest_framework.response import Response
 
 from .permissions import IsOwnerOrReadOnly
@@ -30,9 +33,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_queryset(self):
-        return super().get_queryset().select_related('author').prefetch_related(
-            'ingredients'
-        )
+        qs = super().get_queryset()
+        return qs.select_related('author').prefetch_related('ingredients')
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -42,7 +44,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(
+        detail=True,
+        methods=['post'],
+        permission_classes=[IsAuthenticated]
+    )
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if Favorite.objects.filter(user=request.user, recipe=recipe).exists():
@@ -61,7 +67,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
             raise ValidationError('Рецепт не был в избранном.')
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(
+        detail=True,
+        methods=['post'],
+        permission_classes=[IsAuthenticated]
+    )
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if Cart.objects.filter(user=request.user, recipe=recipe).exists():
@@ -80,7 +90,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
             raise ValidationError('Рецепт не был в списке покупок.')
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[IsAuthenticated]
+    )
     def download_shopping_cart(self, request):
         user = request.user
         cart_recipes = Cart.objects.filter(
@@ -105,10 +119,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
         content = generate_shopping_cart(ingredients)
         response = HttpResponse(
             content, content_type='text/plain; charset=utf-8')
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+        response['Content-Disposition'] = 'attachment;' \
+            ' filename="shopping_cart.txt"'
         return response
 
-    @action(detail=True, methods=['get'], url_path="get-link")
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path="get-link"
+    )
     def get_link(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         short_link = request.build_absolute_uri(
@@ -207,7 +226,11 @@ class CustomUserViewSet(UserViewSet):
                 )
 
             serializer = UserSerializer(
-                user, data=request.data, partial=True, context={'request': request})
+                user,
+                data=request.data,
+                partial=True,
+                context={'request': request}
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             avatar_url = None
@@ -217,7 +240,10 @@ class CustomUserViewSet(UserViewSet):
 
         # DELETE
         if not user.avatar:
-            return Response({'detail': 'Avatar not set.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'detail': 'Avatar not set.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         user.avatar.delete(save=False)
         user.avatar = None
         user.save(update_fields=['avatar'])

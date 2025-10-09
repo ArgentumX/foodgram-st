@@ -11,7 +11,11 @@ class Base64ImageField(serializers.ImageField):
     DEFAULT_MAX_SIZE = settings.DEFAULT_CLIENT_MAX_FILESIZE
 
     def __init__(self, *args, max_size=None, **kwargs):
-        self.max_size = max_size if max_size is not None else self.DEFAULT_MAX_SIZE
+        self.max_size = (
+            max_size
+            if max_size is not None
+            else self.DEFAULT_MAX_SIZE
+        )
         super().__init__(*args, **kwargs)
 
     def to_internal_value(self, data):
@@ -33,7 +37,8 @@ class Base64ImageField(serializers.ImageField):
 
         if ext not in self.ALLOWED_EXTENSIONS:
             raise serializers.ValidationError(
-                "Поддерживаются только изображения в форматах JPG, JPEG, PNG или GIF."
+                "Поддерживаются только изображения"
+                " в форматах JPG, JPEG, PNG или GIF."
             )
 
         try:

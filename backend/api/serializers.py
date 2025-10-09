@@ -2,7 +2,12 @@
 from django.core.exceptions import ValidationError
 from django.db.transaction import atomic
 from foodgram.serializers import Base64ImageField
-from rest_framework.serializers import ModelSerializer, SerializerMethodField, ReadOnlyField, UniqueTogetherValidator
+from rest_framework.serializers import (
+    ModelSerializer,
+    SerializerMethodField,
+    ReadOnlyField,
+    UniqueTogetherValidator
+)
 from recipes.models import Cart, Favorite, Ingredient, Recipe, AmountIngredient
 from .validators import validate_ingredients
 from djoser import serializers as djoser_serializers
@@ -48,7 +53,11 @@ class UserSerializer(djoser_serializers.UserSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        if not request or not request.user.is_authenticated or request.user == obj:
+        if (
+            not request 
+            or not request.user.is_authenticated 
+            or request.user == obj
+        ):
             return False
         return obj.subscribers.filter(subscriber=request.user).exists()
 
