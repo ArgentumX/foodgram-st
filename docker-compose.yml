@@ -1,11 +1,7 @@
-version: "3.3"
-
 services:
   db:
     image: postgres:17
     container_name: foodgram-db
-    env_file:
-      - ./backend/.env
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -24,7 +20,7 @@ services:
     depends_on:
       - db
     env_file:
-      - ./backend/.env
+      - .env
 
   frontend:
     image: argentums/foodgram-frontend:latest

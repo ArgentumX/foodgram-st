@@ -7,27 +7,32 @@ REST API for **Foodgram**, a platform where users can publish recipes, follow au
 ## 🚀 Quick Start with Docker
 
 1. **Clone the repository**:
+
    ```bash
-   git clone https://github.com/ArgentumX/foodgram-st.git  
+   git clone https://github.com/ArgentumX/foodgram-st.git
    cd foodgram-st
    ```
 
 2. **Create the `.env` file**:
+
    ```bash
-   cp ./backend/.env.Example.Docker ./backend/.env
+   cp .env.Example.Docker .env
    ```
 
 3. **Start the services**:
+
    ```bash
    docker compose up --build -d
    ```
 
 4. **Run migrations**:
+
    ```bash
    docker compose exec backend python manage.py migrate
    ```
 
 5. **Create a superuser**:
+
    ```bash
    docker compose exec backend python manage.py createsuperuser
    ```
@@ -41,8 +46,8 @@ REST API for **Foodgram**, a platform where users can publish recipes, follow au
 
 ## 🌐 Available Endpoints
 
-- **Main site (frontend)**: [http://localhost:8000](http://localhost:8000)  
-- **API Documentation (Swagger UI)**: [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)  
+- **Main site (frontend)**: [http://localhost:8000](http://localhost:8000)
+- **API Documentation (Swagger UI)**: [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)
 - **Django Admin**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
 
 ---
@@ -50,14 +55,22 @@ REST API for **Foodgram**, a platform where users can publish recipes, follow au
 ## 💻 Local Setup Without Docker (Backend Only)
 
 1. **Clone the repository**:
+
    ```bash
-   git clone https://github.com/ArgentumX/foodgram-st.git  
+   git clone https://github.com/ArgentumX/foodgram-st.git
    cd foodgram-st
    ```
 
 2. Ensure you have Python 3.9+ and `pip` installed.
 
-3. Create and activate a virtual environment:
+3. Create `.env` from the template:
+
+   ```bash
+   cp .env.Example.Local .env
+   ```
+
+4. Create and activate a virtual environment:
+
    ```bash
    cd backend
    python -m venv venv
@@ -66,17 +79,14 @@ REST API for **Foodgram**, a platform where users can publish recipes, follow au
    venv\Scripts\activate     # Windows
    ```
 
-4. Install dependencies:
+5. Install dependencies:
+
    ```bash
    pip install -r requirements.txt
    ```
 
-5. Create `.env` from the template:
-   ```bash
-   cp .env.Example.Local .env
-   ```
-
 6. Run migrations and load data:
+
    ```bash
    python manage.py migrate
    python manage.py createsuperuser
@@ -92,16 +102,17 @@ REST API for **Foodgram**, a platform where users can publish recipes, follow au
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python 3.9+, Django 3.x, Django REST Framework  
-- **Database**: PostgreSQL 17 (Docker setup)  
+- **Backend**: Python 3.9+, Django 3.x, Django REST Framework
+- **Database**: PostgreSQL 17 (Docker setup)
 - **Containerization**: Docker, Docker Compose
 
 ---
 
 ## 👤 Contacts
 
-Author: **Srebrodolsky D.V**  
-- 🔗 [Telegram](https://t.me/tovarish_comissar) 
+Author: **Srebrodolsky D.V**
+
+- 🔗 [Telegram](https://t.me/tovarish_comissar)
 - 🔗 [GitHub](https://github.com/ArgentumX/)
 
 ---
