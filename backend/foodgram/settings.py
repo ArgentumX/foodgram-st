@@ -28,12 +28,12 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 load_dotenv()
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', 'your-insecure-default-key-for-dev-only')
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'recipes.User'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_filters',
     'djoser',
-    'users',
     'recipes',
     'api',
 ]
@@ -123,12 +122,12 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
 
@@ -167,7 +166,6 @@ SPECTACULAR_SETTINGS = {
 
 DJOSER = {
     'SERIALIZERS': {
-        'user_create': 'api.serializers.UserCreateSerializer',
         'current_user': 'api.serializers.UserSerializer',
         'user': 'api.serializers.UserSerializer',
     },
@@ -178,21 +176,15 @@ DJOSER = {
     'HIDE_USERS': False,
 }
 
-# --- Recipes app params ---
-MAX_LEN_RECIPES_CHARFIELD = 200
-MAX_LEN_RECIPES_TEXTFIELD = 2000
-
-# min
+# in minutes
 MIN_COOKING_TIME = 1
-MAX_COOKING_TIME = 600
 
 MIN_AMOUNT_INGREDIENTS = 1
-MAX_AMOUNT_INGREDIENTS = 10000
 
 RECIPE_IMAGE_SIZE = (800, 800)
 
 RECIPE_IMAGES_MEDIA_PATH = "recipes/images"
-USER_AVATARS_MEDIA_PATH = "users/avatars"
+USER_AVATARS_MEDIA_PATH = "recipes/avatars"
 
 # 4 mb
 DEFAULT_CLIENT_MAX_FILESIZE = 4 * 1024 * 1024

@@ -1,22 +1,82 @@
 # recipes/serializers.py
-from django.core.exceptions import ValidationError
 from django.db.transaction import atomic
-from foodgram.serializers import Base64ImageField
 from rest_framework.serializers import (
     ModelSerializer,
     SerializerMethodField,
+    ImageField,
+    IntegerField,
+    ValidationError,
+    PrimaryKeyRelatedField,
+    FloatField,
+    UniqueTogetherValidator,
     ReadOnlyField,
-    UniqueTogetherValidator
+    CharField,
 )
+from django.core.validators import MinValueValidator
 from recipes.models import Cart, Favorite, Ingredient, Recipe, AmountIngredient
-from .validators import validate_ingredients
 from djoser import serializers as djoser_serializers
 
-from users.models import User
+from recipes.models import User
+import base64
+import binascii
+import uuid
+from django.conf import settings
+from django.core.files.base import ContentFile
+
+
+class Base64ImageField(ImageField):
+    ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
+    DEFAULT_MAX_SIZE = settings.DEFAULT_CLIENT_MAX_FILESIZE
+
+    def __init__(self, *args, max_size=None, **kwargs):
+        self.max_size = (
+            max_size
+            if max_size is not None
+            else self.DEFAULT_MAX_SIZE
+        )
+        super().__init__(*args, **kwargs)
+
+    def to_internal_value(self, data):
+        if not isinstance(data, str) or not data.startswith('data:image'):
+            return super().to_internal_value(data)
+
+        try:
+            header, encoded_data = data.split(';base64,', 1)
+        except ValueError:
+            raise ValidationError(
+                "Неверный формат base64-изображения.")
+
+        try:
+            mime_type = header.replace('data:', '')
+            ext = mime_type.split('/')[-1].lower()
+        except IndexError:
+            raise ValidationError(
+                "Не удалось определить расширение изображения.")
+
+        if ext not in self.ALLOWED_EXTENSIONS:
+            raise ValidationError(
+                "Поддерживаются только изображения"
+                " в форматах JPG, JPEG, PNG или GIF."
+            )
+
+        try:
+            decoded = base64.b64decode(encoded_data)
+        except (TypeError, binascii.Error, ValueError):
+            raise ValidationError(
+                "Неверный формат base64-изображения.")
+
+        if len(decoded) > self.max_size:
+            max_mb = self.max_size // (1024 * 1024)
+            raise ValidationError(
+                f"Размер изображения не должен превышать {max_mb} МБ."
+            )
+
+        filename = f"{uuid.uuid4().hex[:10]}.{ext}"
+        file = ContentFile(decoded, name=filename)
+        return super().to_internal_value(file)
 
 
 class ShortRecipeSerializer(ModelSerializer):
-    """Краткое представление рецепта."""
 
     class Meta:
         model = Recipe
@@ -25,41 +85,24 @@ class ShortRecipeSerializer(ModelSerializer):
 
 
 class IngredientSerializer(ModelSerializer):
-    """Сериализатор ингредиентов (только чтение)."""
 
     class Meta:
         model = Ingredient
         fields = ("id", "name", "measurement_unit")
-        read_only_fields = fields
-
-
-class UserCreateSerializer(djoser_serializers.UserCreateSerializer):
-    class Meta(djoser_serializers.UserCreateSerializer.Meta):
-        model = User
-        fields = [
-            'id',
-            'email',
-            'username',
-            'first_name',
-            'last_name',
-            'password'
-        ]
-        read_only_fields = ['id']
 
 
 class UserSerializer(djoser_serializers.UserSerializer):
     is_subscribed = SerializerMethodField()
     avatar = Base64ImageField(required=False)
 
-    def get_is_subscribed(self, obj):
+    def get_is_subscribed(self, user):
         request = self.context.get('request')
-        if (
-            not request
-            or not request.user.is_authenticated
-            or request.user == obj
-        ):
-            return False
-        return obj.subscribers.filter(subscriber=request.user).exists()
+        return (
+            request is not None
+            and request.user.is_authenticated
+            and request.user != user
+            and user.authors.filter(subscriber=request.user).exists()
+        )
 
     class Meta(djoser_serializers.UserSerializer.Meta):
         model = User
@@ -72,40 +115,26 @@ class UserSerializer(djoser_serializers.UserSerializer):
             'last_name',
             'is_subscribed'
         ]
-
-
-class SubscriptionSerializer(UserSerializer):
-    recipes = SerializerMethodField()
-    recipes_count = SerializerMethodField()
-    avatar = Base64ImageField(required=False)
-
-    class Meta(UserSerializer.Meta):
-        fields = (
-            "email",
-            "id",
-            "username",
-            "first_name",
-            "last_name",
-            "avatar",
-            "is_subscribed",
-            "recipes",
-            "recipes_count",
-        )
         read_only_fields = fields
 
-    def get_is_subscribed(self, obj):
-        return True
 
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
+class UserWithAdditionalInfoSerializer(UserSerializer):
+    recipes = SerializerMethodField()
+    recipes_count = IntegerField(source='recipes.count', read_only=True)
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + [
+            "recipes",
+            "recipes_count",
+        ]
+        read_only_fields = fields
 
     def get_recipes(self, obj):
         request = self.context.get('request')
-        if not request:
-            recipes = obj.recipes.all()
-        else:
-            limit = request.query_params.get('recipes_limit')
-            recipes = obj.recipes.all()
+        recipes = obj.recipes.all()
+
+        if request:
+            limit = request.GET.get('recipes_limit')
             if limit and limit.isdigit() and int(limit) >= 0:
                 recipes = recipes[:int(limit)]
 
@@ -118,10 +147,19 @@ class SubscriptionSerializer(UserSerializer):
 
 
 class AmountIngredientSerializer(ModelSerializer):
-    id = ReadOnlyField(source='ingredient.id')
+    id = PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(),
+        source='ingredient'
+    )
     name = ReadOnlyField(source='ingredient.name')
     measurement_unit = ReadOnlyField(
         source='ingredient.measurement_unit'
+    )
+    amount = FloatField(
+        validators=[MinValueValidator(
+            1,
+            message="Количество должно быть не меньше 1."
+        )]
     )
 
     class Meta:
@@ -130,7 +168,7 @@ class AmountIngredientSerializer(ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset=AmountIngredient.objects.all(),
-                fields=['ingredient', 'recipe']
+                fields=('ingredient', 'recipe')
             )
         ]
 
@@ -143,6 +181,12 @@ class RecipeSerializer(ModelSerializer):
         many=True,
         read_only=True,
     )
+    text = CharField(
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True
+    )
+
     is_favorited = SerializerMethodField()
     is_in_shopping_cart = SerializerMethodField()
     image = Base64ImageField()
@@ -186,59 +230,67 @@ class RecipeSerializer(ModelSerializer):
         return False
 
     def validate(self, attrs):
-
-        text = self.initial_data.get("text", None)
-        if not text:
-            raise ValidationError("Вы не указали текст")
-
         ingredients_data = self.initial_data.get("ingredients")
+        if not ingredients_data:
+            raise ValidationError("Нужно указать хотя бы один ингредиент.")
 
-        attrs["ingredients"] = validate_ingredients(
-            ingredients_data, Ingredient)
+        seen_ids = set()
+        validated_ingredients = []
 
-        name = attrs.get('name')
-        author = self.context['request'].user
-        if name and Recipe.objects.filter(name=name, author=author).exists():
-            raise ValidationError("У вас уже есть рецепт с таким названием.")
+        for item in ingredients_data:
+            ing_id = item["id"]
+            amount = item["amount"]
+            if amount < 1:
+                raise ValidationError(
+                    "Количество ингредиента должно быть больше 0."
+                )
 
+            if ing_id in seen_ids:
+                raise ValidationError(
+                    f"Ингредиенты не должны дублироваться: {ing_id}"
+                )
+            seen_ids.add(ing_id)
+            validated_ingredients.append(
+                {"ingredient_id": ing_id, "amount": amount}
+            )
+
+        existing_ids = set(
+            Ingredient.objects.filter(id__in=seen_ids).values_list(
+                "id", flat=True
+            )
+        )
+        if len(existing_ids) != len(seen_ids):
+            missing = seen_ids - existing_ids
+            raise ValidationError(
+                f"Ингредиенты с ID {missing} не существуют."
+            )
+
+        attrs["ingredients"] = validated_ingredients
         return attrs
 
     @atomic
     def create(self, validated_data):
-        ingredients = validated_data.pop("ingredients")
-        recipe = Recipe.objects.create(**validated_data)
-        recipe_ingredients = [
-            AmountIngredient(
-                recipe=recipe,
-                ingredient_id=ing_id,
-                amount=amount
-            )
-            for ing_id, amount in ingredients.items()
-        ]
-
-        AmountIngredient.objects.bulk_create(recipe_ingredients)
+        ingredients_data = validated_data.pop('ingredients', [])
+        recipe = super().create(validated_data)
+        self._set_ingredients(recipe, ingredients_data)
         return recipe
 
     @atomic
     def update(self, instance, validated_data):
-        ingredients = validated_data.pop("ingredients", None)
+        ingredients_data = validated_data.pop('ingredients', None)
+        recipe = super().update(instance, validated_data)
+        if ingredients_data is not None:
+            self._set_ingredients(recipe, ingredients_data)
+        return recipe
 
-        # Обновляем основные поля
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        if ingredients is not None:
-            instance.ingredients.clear()
-            recipe_ingredients = [
-                AmountIngredient(
-                    recipe=instance,
-                    ingredient_id=ing_id,
-                    amount=amount
-                )
-                for ing_id, amount in ingredients.items()
-            ]
-
-            AmountIngredient.objects.bulk_create(recipe_ingredients)
-
-        instance.save()
-        return instance
+    def _set_ingredients(self, recipe, ingredients_data):
+        recipe.ingredients.clear()
+        recipe_ingredients = [
+            AmountIngredient(
+                recipe=recipe,
+                ingredient_id=item['ingredient_id'], 
+                amount=item['amount']
+            )
+            for item in ingredients_data
+        ]
+        AmountIngredient.objects.bulk_create(recipe_ingredients)

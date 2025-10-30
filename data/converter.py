@@ -15,8 +15,6 @@ for idx, ingredient in enumerate(ingredients, start=1000):
         "fields": {
             "name": ingredient["name"],
             "measurement_unit": ingredient["measurement_unit"],
-            "created_at": "2025-04-01T10:00:00Z",
-            "updated_at": "2025-04-01T10:00:00Z"
         }
     })
 

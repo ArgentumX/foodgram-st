@@ -1,6 +1,6 @@
 [
   {
-    "model": "users.user",
+    "model": "recipes.user",
     "pk": 1,
     "fields": {
       "password": "pbkdf2_sha256$600000$examplehash1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
@@ -20,9 +20,7 @@
     "pk": 1,
     "fields": {
       "name": "[test] помидор",
-      "measurement_unit": "шт",
-      "created_at": "2025-04-01T10:00:00Z",
-      "updated_at": "2025-04-01T10:00:00Z"
+      "measurement_unit": "шт"
     }
   },
   {
@@ -30,9 +28,7 @@
     "pk": 2,
     "fields": {
       "name": "[test] огурец",
-      "measurement_unit": "шт",
-      "created_at": "2025-04-01T10:00:00Z",
-      "updated_at": "2025-04-01T10:00:00Z"
+      "measurement_unit": "шт"
     }
   },
   {
@@ -40,9 +36,7 @@
     "pk": 3,
     "fields": {
       "name": "[test] оливковое масло",
-      "measurement_unit": "ст. л.",
-      "created_at": "2025-04-01T10:00:00Z",
-      "updated_at": "2025-04-01T10:00:00Z"
+      "measurement_unit": "ст. л."
     }
   },
   {
@@ -50,9 +44,7 @@
     "pk": 4,
     "fields": {
       "name": "[test] куриная грудка",
-      "measurement_unit": "г",
-      "created_at": "2025-04-01T10:00:00Z",
-      "updated_at": "2025-04-01T10:00:00Z"
+      "measurement_unit": "г"
     }
   },
   {
@@ -60,9 +52,7 @@
     "pk": 5,
     "fields": {
       "name": "[test] рис",
-      "measurement_unit": "г",
-      "created_at": "2025-04-01T10:00:00Z",
-      "updated_at": "2025-04-01T10:00:00Z"
+      "measurement_unit": "г"
     }
   },
   {
@@ -73,9 +63,7 @@
       "author": 1,
       "text": "Свежий летний салат из помидоров и огурцов.",
       "cooking_time": 10,
-      "image": "some image",
-      "created_at": "2025-04-01T11:00:00Z",
-      "updated_at": "2025-04-01T11:00:00Z"
+      "image": "some image"
     }
   },
   {
@@ -86,9 +74,7 @@
       "author": 1,
       "text": "Простое и сытное блюдо на каждый день.",
       "cooking_time": 40,
-      "image": "some image",
-      "created_at": "2025-04-01T12:00:00Z",
-      "updated_at": "2025-04-01T12:00:00Z"
+      "image": "some image"
     }
   },
   {
@@ -97,9 +83,7 @@
     "fields": {
       "recipe": 1,
       "ingredient": 1,
-      "amount": 2,
-      "created_at": "2025-04-01T11:00:00Z",
-      "updated_at": "2025-04-01T11:00:00Z"
+      "amount": 2
     }
   },
   {
@@ -108,9 +92,7 @@
     "fields": {
       "recipe": 1,
       "ingredient": 2,
-      "amount": 1,
-      "created_at": "2025-04-01T11:00:00Z",
-      "updated_at": "2025-04-01T11:00:00Z"
+      "amount": 1
     }
   },
   {
@@ -119,9 +101,7 @@
     "fields": {
       "recipe": 1,
       "ingredient": 3,
-      "amount": 1,
-      "created_at": "2025-04-01T11:00:00Z",
-      "updated_at": "2025-04-01T11:00:00Z"
+      "amount": 1
     }
   },
   {
@@ -130,9 +110,7 @@
     "fields": {
       "recipe": 2,
       "ingredient": 4,
-      "amount": 300,
-      "created_at": "2025-04-01T12:00:00Z",
-      "updated_at": "2025-04-01T12:00:00Z"
+      "amount": 300
     }
   },
   {
@@ -141,9 +119,7 @@
     "fields": {
       "recipe": 2,
       "ingredient": 5,
-      "amount": 200,
-      "created_at": "2025-04-01T12:00:00Z",
-      "updated_at": "2025-04-01T12:00:00Z"
+      "amount": 200
     }
   }
 ]
