@@ -179,7 +179,7 @@ class Recipe(models.Model):
         if not self.name or not self.name.strip():
             raise ValidationError(
                 {"name": "Название блюда не может быть пустым."})
-    
+
         if len(self.name.strip()) < 2:
             raise ValidationError(
                 {"name": "Название блюда должно содержать хотя бы 2 символа."})
@@ -187,7 +187,7 @@ class Recipe(models.Model):
         if self.text and not self.text.strip():
             raise ValidationError(
                 {"text": "Описание не может состоять только из пробелов."})
-    
+
     class Meta:
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"

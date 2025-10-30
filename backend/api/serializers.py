@@ -288,7 +288,7 @@ class RecipeSerializer(ModelSerializer):
         recipe_ingredients = [
             AmountIngredient(
                 recipe=recipe,
-                ingredient_id=item['ingredient_id'], 
+                ingredient_id=item['ingredient_id'],
                 amount=item['amount']
             )
             for item in ingredients_data

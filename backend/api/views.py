@@ -57,10 +57,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             recipe=recipe,
             model=Favorite,
             error_message_exists=f'Рецепт {recipe.name} уже в избранном.',
-            request=request  # ← добавьте эту строку
+            request=request
         )
         return Response(data, status=status.HTTP_201_CREATED)
-    
+
     @favorite.mapping.delete
     def delete_favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
@@ -84,7 +84,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             recipe=recipe,
             model=Cart,
             error_message_exists='Рецепт уже в списке покупок.',
-            request=request  
+            request=request
         )
         return Response(data, status=status.HTTP_201_CREATED)
 
