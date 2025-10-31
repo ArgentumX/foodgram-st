@@ -4,7 +4,7 @@ from . import views
 urlpatterns = [
     path(
         's/<int:pk>/',
-        views.RecipeShortLinkRedirectView.as_view(),
+        views.recipe_short_link_redirect,
         name='recipe-short-link'
     ),
 ]

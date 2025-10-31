@@ -1,7 +1,6 @@
 from django.db import models
 from django.db.models.functions import Length
 from django.contrib.auth.models import AbstractUser
-from rest_framework.exceptions import ValidationError
 from django.db.models import (
     CASCADE,
     F,
@@ -22,8 +21,9 @@ from django.core.validators import (
     RegexValidator
 )
 
-MAX_LEN_RECIPES_CHARFIELD = 200
 MAX_LEN_RECIPES_TEXTFIELD = 2000
+MIN_COOKING_TIME = 1
+MIN_AMOUNT_INGREDIENTS = 1
 
 CharField.register_lookup(Length)
 
@@ -35,12 +35,12 @@ class User(AbstractUser):
         validators=[
             RegexValidator(
                 regex=r'^[a-zA-Z0-9._-]+$',
-                message='Имя пользователя может содержать только'
+                message='Логин может содержать только'
                 ' латинские буквы, цифры, дефис и подчёркивание.',
                 code='invalid_username'
             )
         ],
-        verbose_name='Имя пользователя'
+        verbose_name='Логин'
     )
 
     email = EmailField(
@@ -102,18 +102,12 @@ class Subscription(models.Model):
         ]
 
 
-HEX_COLOR_VALIDATOR = RegexValidator(
-    regex=r"^#[0-9A-Fa-f]{6}$",
-    message="Цвет должен быть указан в формате HEX: #RRGGBB"
-)
-
-
 # Проверка на уникальность пары полей: Имеется,
 # Добавление uniquе=True сделает проверку уникальности пары полей бессмысленной
 class Ingredient(models.Model):
     name = CharField(
         verbose_name="Продукт",
-        max_length=MAX_LEN_RECIPES_CHARFIELD,
+        max_length=128,
     )
     measurement_unit = CharField(
         verbose_name="Единица измерения",
@@ -136,7 +130,7 @@ class Ingredient(models.Model):
 class Recipe(models.Model):
     name = CharField(
         verbose_name="Название блюда",
-        max_length=MAX_LEN_RECIPES_CHARFIELD,
+        max_length=256,
     )
     author = ForeignKey(
         verbose_name="Автор рецепта",
@@ -158,35 +152,20 @@ class Recipe(models.Model):
     )
     text = TextField(
         verbose_name="Описание блюда",
-        max_length=MAX_LEN_RECIPES_TEXTFIELD,
         blank=True,
     )
     cooking_time = PositiveSmallIntegerField(
         verbose_name="Время приготовления (в минутах)",
         validators=[
             MinValueValidator(
-                settings.MIN_COOKING_TIME,
+                MIN_COOKING_TIME,
                 message=(
                     f"Время приготовления не может быть меньше "
-                    f"{settings.MIN_COOKING_TIME} минуты."
+                    f"{MIN_COOKING_TIME} минуты."
                 )
             )
         ],
     )
-
-    def clean(self):
-        super().clean()
-        if not self.name or not self.name.strip():
-            raise ValidationError(
-                {"name": "Название блюда не может быть пустым."})
-
-        if len(self.name.strip()) < 2:
-            raise ValidationError(
-                {"name": "Название блюда должно содержать хотя бы 2 символа."})
-
-        if self.text and not self.text.strip():
-            raise ValidationError(
-                {"text": "Описание не может состоять только из пробелов."})
 
     class Meta:
         verbose_name = "Рецепт"
@@ -209,7 +188,7 @@ class AmountIngredient(models.Model):
     )
     ingredient = ForeignKey(
         verbose_name="Ингредиент",
-        related_name="recipe_amounts",
+        related_name="ingredient_amounts",
         to=Ingredient,
         on_delete=CASCADE,
     )
@@ -217,10 +196,10 @@ class AmountIngredient(models.Model):
         verbose_name="Количество",
         validators=[
             MinValueValidator(
-                settings.MIN_AMOUNT_INGREDIENTS,
+                MIN_AMOUNT_INGREDIENTS,
                 message=(
                     f"Количество ингредиента должно быть не менее "
-                    f"{settings.MIN_AMOUNT_INGREDIENTS}."
+                    f"{MIN_AMOUNT_INGREDIENTS}."
                 )
             )
         ],
@@ -275,12 +254,12 @@ class UserRecipeRelation(models.Model):
 
 
 class Favorite(UserRecipeRelation):
-    class Meta:
+    class Meta(UserRecipeRelation.Meta):
         verbose_name = "Избранный рецепт"
         verbose_name_plural = "Избранные рецепты"
 
 
 class Cart(UserRecipeRelation):
-    class Meta:
+    class Meta(UserRecipeRelation.Meta):
         verbose_name = "Рецепт в списке покупок"
         verbose_name_plural = "Рецепты в списке покупок"

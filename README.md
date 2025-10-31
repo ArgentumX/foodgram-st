@@ -39,7 +39,7 @@ REST API for **Foodgram**, a platform where users can publish recipes, follow au
 
 6. **Load test data**:
    ```bash
-   docker compose exec backend python manage.py load_test_data
+   docker compose exec backend python manage.py load_ingredients_data
    ```
 
 ---
@@ -90,7 +90,7 @@ REST API for **Foodgram**, a platform where users can publish recipes, follow au
    ```bash
    python manage.py migrate
    python manage.py createsuperuser
-   python manage.py load_test_data
+   python manage.py load_ingredients_data
    ```
 
 7. Start the development server:

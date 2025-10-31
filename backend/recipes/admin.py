@@ -29,7 +29,7 @@ class UserAdminConfig(UserAdmin):
 
     @admin.display(description="ФИО")
     def full_name(self, user):
-        return f"{user.first_name} {user.last_name}".strip() or "—"
+        return f"{user.first_name} {user.last_name}"
 
     @admin.display(description="Аватар")
     @mark_safe
@@ -54,7 +54,7 @@ class UserAdminConfig(UserAdmin):
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'measurement_unit', 'recipes_count')
+    list_display = ('pk', 'name', 'measurement_unit', 'recipes_count')
     search_fields = ('name',)
     list_filter = ('measurement_unit',)
     ordering = ('name',)
@@ -66,7 +66,7 @@ class IngredientAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         return queryset.annotate(
-            recipes_count=Count('recipe_amounts', distinct=True)
+            recipes_count=Count('ingredient_amounts', distinct=True)
         )
 
 
@@ -80,7 +80,7 @@ class AmountIngredientInline(admin.TabularInline):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
+        'pk',
         'name',
         'cooking_time',
         'author',
@@ -100,18 +100,12 @@ class RecipeAdmin(admin.ModelAdmin):
     @mark_safe
     def ingredients_list(self, recipe):
         amounts = recipe.ingredient_amounts.select_related('ingredient').all()
-        if not amounts:
-            return '<em>Нет ингредиентов</em>'
-        items = ''.join(
-            f'<li>{ai.ingredient.name} — {ai.amount} '
-            f'{ai.ingredient.measurement_unit}</li>'
+        items = '<br>'.join(
+            f'{ai.ingredient.name} — '
+            f'{ai.amount} {ai.ingredient.measurement_unit}'
             for ai in amounts
         )
-        return (
-            '<ul style="margin:0; padding-left:20px;">'
-            f'{items}'
-            '</ul>'
-        )
+        return items
 
     @admin.display(description="Изображение")
     @mark_safe
@@ -121,7 +115,7 @@ class RecipeAdmin(admin.ModelAdmin):
                 f'<img src="{recipe.image.url}" '
                 'style="max-height:80px; border-radius:4px;">'
             )
-        return '<em>Нет изображения</em>'
+        return ''
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)

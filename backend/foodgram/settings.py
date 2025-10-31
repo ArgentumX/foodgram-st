@@ -176,11 +176,6 @@ DJOSER = {
     'HIDE_USERS': False,
 }
 
-# in minutes
-MIN_COOKING_TIME = 1
-
-MIN_AMOUNT_INGREDIENTS = 1
-
 RECIPE_IMAGE_SIZE = (800, 800)
 
 RECIPE_IMAGES_MEDIA_PATH = "recipes/images"
