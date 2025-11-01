@@ -5,7 +5,7 @@ from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
     IsAuthenticated
@@ -24,7 +24,7 @@ from .serializers import (
 from .filters import IngredientFilter, RecipeFilter
 from .utils import generate_shopping_cart
 from djoser.views import UserViewSet as DjoserUserViewSet
-from .serializers import UserWithAdditionalInfoSerializer, UserSerializer
+from .serializers import UserWithAdditionalInfoSerializer, BaseUserSerializer
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -52,25 +52,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        data = self._add_to_relation(
-            user=request.user,
+        return self._add_to_relation(
             recipe=recipe,
             model=Favorite,
-            error_message_exists=f'Рецепт {recipe.name} уже в избранном.',
             request=request
         )
-        return Response(data, status=status.HTTP_201_CREATED)
 
     @favorite.mapping.delete
     def delete_favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        self._remove_from_relation(
+        return self._remove_from_relation(
             user=request.user,
             recipe=recipe,
             model=Favorite,
-            error_message_not_found='Рецепт не был в избранном.'
         )
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,
@@ -79,38 +74,46 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        data = self._add_to_relation(
-            user=request.user,
+        return self._add_to_relation(
             recipe=recipe,
             model=Cart,
-            error_message_exists='Рецепт уже в списке покупок.',
             request=request
         )
-        return Response(data, status=status.HTTP_201_CREATED)
 
     @shopping_cart.mapping.delete
     def delete_shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        self._remove_from_relation(
+        return self._remove_from_relation(
             user=request.user,
             recipe=recipe,
             model=Cart,
-            error_message_not_found='Рецепт не был в списке покупок.'
         )
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @staticmethod
-    def _add_to_relation(user, recipe, model, error_message_exists, request):
-        if model.objects.filter(user=user, recipe=recipe).exists():
-            raise ValidationError(error_message_exists)
-        model.objects.create(user=user, recipe=recipe)
-        return ShortRecipeSerializer(recipe, context={'request': request}).data
+    def _add_to_relation(recipe, model, request):
+        obj, created = model.objects.get_or_create(
+            user=request.user,
+            recipe=recipe
+        )
+        if not created:
+            raise ValidationError(
+                f"Отношение с {model._meta.verbose_name} "
+                f"с рецептом {recipe.name} уже установлено"
+            )
+        return Response(
+            ShortRecipeSerializer(recipe, context={'request': request}).data,
+            status=status.HTTP_201_CREATED
+        )
 
     @staticmethod
-    def _remove_from_relation(user, recipe, model, error_message_not_found):
+    def _remove_from_relation(user, recipe, model):
         deleted, _ = model.objects.filter(user=user, recipe=recipe).delete()
         if not deleted:
-            raise ValidationError(error_message_not_found)
+            raise ValidationError(
+                f"Отношение с {model._meta.verbose_name} "
+                f"с рецептом {recipe.name} не существует"
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False,
@@ -120,9 +123,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = request.user
         cart_items = user.carts
-
-        if not cart_items.exists():
-            raise ValidationError('Список покупок пуст.')
 
         ingredients = (
             AmountIngredient.objects
@@ -135,13 +135,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipes = (
             cart_items
             .select_related('recipe__author')
-            .values('recipe__name', 'recipe__author__username')
         )
 
         content = generate_shopping_cart(ingredients, recipes)
         response = FileResponse(
-            content.encode('utf-8'),
-            content_type='text/plain; charset=utf-8',
+            content,
+            content_type='text/plain;',
             as_attachment=True,
             filename='shopping_cart.txt'
         )
@@ -150,12 +149,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path="get-link")
     def get_link(self, request, pk=None):
         if not Recipe.objects.filter(pk=pk).exists():
-            raise Response(status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(f"Рецепт с ID {pk} не найден.")
         return Response(
             {'short-link':
                 request.build_absolute_uri(reverse(
                     'recipe-short-link',
-                    kwargs={'pk': pk}))},
+                    args=[pk]))},
             status=status.HTTP_200_OK
         )
 
@@ -190,30 +189,30 @@ class UserViewSet(DjoserUserViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def subscribe(self, request, id):
-        if request.method == 'POST':
-            author = get_object_or_404(User, pk=id)
-            if request.user == author:
-                raise ValidationError('Self-subscription is not allowed.')
-            _, created = Subscription.objects.get_or_create(
+        if request.method == 'DELETE':
+            get_object_or_404(
+                Subscription,
                 subscriber=request.user,
-                author=author
-            )
-            if not created:
-                raise ValidationError('Already subscribed.')
+                author_id=id
+            ).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
-            serializer = UserWithAdditionalInfoSerializer(
-                author,
-                context={'request': request}
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        # DELETE
-        get_object_or_404(
-            Subscription,
+        # POST
+        author = get_object_or_404(User, pk=id)
+        if request.user == author:
+            raise ValidationError('Self-subscription is not allowed.')
+        _, created = Subscription.objects.get_or_create(
             subscriber=request.user,
-            author_id=id
-        ).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            author=author
+        )
+        if not created:
+            raise ValidationError(f'Already subscribed to {author.username}.')
+
+        serializer = UserWithAdditionalInfoSerializer(
+            author,
+            context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(
         detail=False,
@@ -227,7 +226,7 @@ class UserViewSet(DjoserUserViewSet):
             if 'avatar' not in request.data:
                 raise ValidationError({'avatar': ['Обязательное поле.']})
 
-            serializer = UserSerializer(
+            serializer = BaseUserSerializer(
                 user,
                 data=request.data,
                 partial=True,

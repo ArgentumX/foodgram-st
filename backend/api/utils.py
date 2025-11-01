@@ -15,8 +15,8 @@ def generate_shopping_cart(ingredients, recipes) -> str:
         '',
         'Рецепты:',
         *[
-            f"• {recipe['recipe__name']} — "
-            f"{recipe['recipe__author__username']}"
+            f"• {recipe.recipe.name} — "
+            f"{recipe.recipe.author.username}"
             for recipe in recipes
         ],
         '',

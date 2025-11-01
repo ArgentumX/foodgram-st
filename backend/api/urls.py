@@ -22,7 +22,8 @@ if settings.DEBUG:
     )
     urlpatterns += [
         path('schema/', SpectacularAPIView.as_view(), name='schema'),
-        # Redoc is only for not-Docker dev setup
+        # Redoc is only for not-docker dev setup.
+        # /api/docs/ is still working in docker setup
         path(
             'redoc/',
             SpectacularRedocView.as_view(url_name='schema'),

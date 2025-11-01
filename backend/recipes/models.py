@@ -102,8 +102,6 @@ class Subscription(models.Model):
         ]
 
 
-# Проверка на уникальность пары полей: Имеется,
-# Добавление uniquе=True сделает проверку уникальности пары полей бессмысленной
 class Ingredient(models.Model):
     name = CharField(
         verbose_name="Продукт",
@@ -152,7 +150,7 @@ class Recipe(models.Model):
     )
     text = TextField(
         verbose_name="Описание блюда",
-        blank=True,
+        blank=False,
     )
     cooking_time = PositiveSmallIntegerField(
         verbose_name="Время приготовления (в минутах)",

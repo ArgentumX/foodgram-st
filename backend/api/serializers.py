@@ -7,14 +7,18 @@ from rest_framework.serializers import (
     IntegerField,
     ValidationError,
     PrimaryKeyRelatedField,
-    FloatField,
-    UniqueTogetherValidator,
     ReadOnlyField,
-    CharField,
 )
-from django.core.validators import MinValueValidator
-from recipes.models import Cart, Favorite, Ingredient, Recipe, AmountIngredient
-from djoser import serializers as djoser_serializers
+from recipes.models import (
+    MIN_AMOUNT_INGREDIENTS,
+    MIN_COOKING_TIME,
+    Cart,
+    Favorite,
+    Ingredient,
+    Recipe,
+    AmountIngredient
+)
+from djoser.serializers import UserSerializer
 
 from recipes.models import User
 import base64
@@ -91,7 +95,7 @@ class IngredientSerializer(ModelSerializer):
         fields = ("id", "name", "measurement_unit")
 
 
-class UserSerializer(djoser_serializers.UserSerializer):
+class BaseUserSerializer(UserSerializer):
     is_subscribed = SerializerMethodField()
     avatar = Base64ImageField(required=False)
 
@@ -104,26 +108,23 @@ class UserSerializer(djoser_serializers.UserSerializer):
             and user.authors.filter(subscriber=request.user).exists()
         )
 
-    class Meta(djoser_serializers.UserSerializer.Meta):
+    class Meta(UserSerializer.Meta):
         model = User
         fields = [
-            'id',
-            'username',
-            'email',
+            *UserSerializer.Meta.fields,
             'avatar',
-            'first_name',
-            'last_name',
             'is_subscribed'
         ]
         read_only_fields = fields
 
 
-class UserWithAdditionalInfoSerializer(UserSerializer):
+class UserWithAdditionalInfoSerializer(BaseUserSerializer):
     recipes = SerializerMethodField()
     recipes_count = IntegerField(source='recipes.count', read_only=True)
 
-    class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + [
+    class Meta(BaseUserSerializer.Meta):
+        fields = [
+            *BaseUserSerializer.Meta.fields,
             "recipes",
             "recipes_count",
         ]
@@ -155,38 +156,20 @@ class AmountIngredientSerializer(ModelSerializer):
     measurement_unit = ReadOnlyField(
         source='ingredient.measurement_unit'
     )
-    amount = FloatField(
-        validators=[MinValueValidator(
-            1,
-            message="Количество должно быть не меньше 1."
-        )]
-    )
+    amount = IntegerField(min_value=MIN_AMOUNT_INGREDIENTS)
 
     class Meta:
         model = AmountIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=AmountIngredient.objects.all(),
-                fields=('ingredient', 'recipe')
-            )
-        ]
 
 
 class RecipeSerializer(ModelSerializer):
-    """Полный сериализатор рецепта."""
-    author = UserSerializer(read_only=True)
+    author = BaseUserSerializer(read_only=True)
     ingredients = AmountIngredientSerializer(
         source='ingredient_amounts',
-        many=True,
-        read_only=True,
+        many=True
     )
-    text = CharField(
-        required=True,
-        allow_blank=False,
-        trim_whitespace=True
-    )
-
+    cooking_time = IntegerField(min_value=MIN_COOKING_TIME)
     is_favorited = SerializerMethodField()
     is_in_shopping_cart = SerializerMethodField()
     image = Base64ImageField()
@@ -211,86 +194,58 @@ class RecipeSerializer(ModelSerializer):
             "is_in_shopping_cart",
         )
 
-    def get_is_favorited(self, obj):
+    def get_is_favorited(self, recipe):
+        return self._is_in_relations(recipe, Favorite)
+
+    def get_is_in_shopping_cart(self, recipe):
+        return self._is_in_relations(recipe, Cart)
+
+    def _is_in_relations(self, recipe, model):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return Favorite.objects.filter(
+            return model.objects.filter(
                 user=request.user,
-                recipe=obj
+                recipe=recipe
             ).exists()
         return False
 
-    def get_is_in_shopping_cart(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return Cart.objects.filter(
-                user=request.user,
-                recipe=obj
-            ).exists()
-        return False
-
-    def validate(self, attrs):
-        ingredients_data = self.initial_data.get("ingredients")
+    def validate(self, data):
+        ingredients_data = data.get('ingredient_amounts')
         if not ingredients_data:
             raise ValidationError("Нужно указать хотя бы один ингредиент.")
 
         seen_ids = set()
-        validated_ingredients = []
-
         for item in ingredients_data:
-            ing_id = item["id"]
-            amount = item["amount"]
-            if amount < 1:
-                raise ValidationError(
-                    "Количество ингредиента должно быть больше 0."
-                )
-
+            ing_id = item['ingredient'].id
             if ing_id in seen_ids:
                 raise ValidationError(
                     f"Ингредиенты не должны дублироваться: {ing_id}"
                 )
             seen_ids.add(ing_id)
-            validated_ingredients.append(
-                {"ingredient_id": ing_id, "amount": amount}
-            )
 
-        existing_ids = set(
-            Ingredient.objects.filter(id__in=seen_ids).values_list(
-                "id", flat=True
-            )
-        )
-        if len(existing_ids) != len(seen_ids):
-            missing = seen_ids - existing_ids
-            raise ValidationError(
-                f"Ингредиенты с ID {missing} не существуют."
-            )
-
-        attrs["ingredients"] = validated_ingredients
-        return attrs
+        return data
 
     @atomic
     def create(self, validated_data):
-        ingredients_data = validated_data.pop('ingredients', [])
+        ingredients_data = validated_data.pop('ingredient_amounts')
         recipe = super().create(validated_data)
         self._set_ingredients(recipe, ingredients_data)
         return recipe
 
     @atomic
     def update(self, instance, validated_data):
-        ingredients_data = validated_data.pop('ingredients', None)
-        recipe = super().update(instance, validated_data)
+        ingredients_data = validated_data.pop('ingredient_amounts', None)
         if ingredients_data is not None:
-            self._set_ingredients(recipe, ingredients_data)
-        return recipe
+            self._set_ingredients(instance, ingredients_data)
+        return super().update(instance, validated_data)
 
     def _set_ingredients(self, recipe, ingredients_data):
         recipe.ingredients.clear()
-        recipe_ingredients = [
+        AmountIngredient.objects.bulk_create([
             AmountIngredient(
                 recipe=recipe,
-                ingredient_id=item['ingredient_id'],
+                ingredient=item['ingredient'],
                 amount=item['amount']
             )
             for item in ingredients_data
-        ]
-        AmountIngredient.objects.bulk_create(recipe_ingredients)
+        ])

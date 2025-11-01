@@ -66,7 +66,7 @@ REST API for **Foodgram**, a platform where users can publish recipes, follow au
 3. Create `.env` from the template:
 
    ```bash
-   cp .env.Example.Local .env
+   cp .env.Example.Local ./backend/.env
    ```
 
 4. Create and activate a virtual environment:
